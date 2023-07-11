@@ -10,13 +10,17 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("account")
+@RequestMapping("auth")
 @RequiredArgsConstructor
 public class UserController {
     private final AuthService service;
 
     @GetMapping
-    public void getAuthorizeUrl(HttpServletResponse response) throws IOException {
-        response.sendRedirect(service.authorize());
+    public void getAuthorizeUrl(HttpServletResponse response) {
+        try {
+            response.sendRedirect(service.authorize());
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
     }
 }
