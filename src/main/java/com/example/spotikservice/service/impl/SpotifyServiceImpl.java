@@ -67,7 +67,9 @@ public class SpotifyServiceImpl implements SpotifyService {
                             return false;
                         }
             }).toList();
-            map.put(artist.getName(), songs);
+            if (songs.size() != 0) {
+                map.put(artist.getName(), songs);
+            }
         }
         return map;
     }
