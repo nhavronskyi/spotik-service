@@ -1,32 +1,28 @@
 package com.example.spotikservice.controller;
 
+import com.example.spotikservice.service.SpotifyService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 
 @RestController
 @RequestMapping
 @RequiredArgsConstructor
 public class CallbackController {
-    private final SpotifyApi spotifyApi;
+    private final SpotifyService service;
 
     @SneakyThrows
     @GetMapping
-    public void setAccessToken(@RequestParam String code) {
-        var execute = spotifyApi.authorizationCode(code)
-                .build().execute();
-        spotifyApi.setAccessToken(execute.getAccessToken());
+    public int setAccessToken(@RequestParam String code) {
+        return service.setAccessToken(code);
     }
 
-    @SneakyThrows
     @GetMapping("playlists")
     public PlaylistSimplified[] getPlaylists() {
-        return spotifyApi.getListOfCurrentUsersPlaylists()
-                .build().execute().getItems();
+        return service.getPlaylists();
     }
 }
