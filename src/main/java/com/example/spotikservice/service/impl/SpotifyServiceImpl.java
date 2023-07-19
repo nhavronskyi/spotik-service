@@ -45,28 +45,49 @@ public class SpotifyServiceImpl implements SpotifyService {
                 .build().execute().getItems();
     }
 
-    @SneakyThrows
     @Cacheable(value = CacheConstants.REQUEST_CACHE)
     public TreeMap<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists() {
+        return getAllNewReleases(getUserFollowedArtists());
+    }
+
+    @SneakyThrows
+    private List<Artist> getUserFollowedArtists() {
+        var artists = new ArrayList<Artist>();
+        String cursor = null;
+
+        do {
+            var followedArtistsPage = spotifyApi.getUsersFollowedArtists(ModelObjectType.ARTIST)
+                    .limit(50)
+                    .after(Optional.ofNullable(cursor).orElse("0"))
+                    .build()
+                    .execute();
+
+            if (followedArtistsPage != null) {
+                artists.addAll(Arrays.asList(followedArtistsPage.getItems()));
+                cursor = followedArtistsPage.getCursors()[0].getAfter();
+            } else {
+                break;
+            }
+        } while (cursor != null);
+
+        return artists;
+    }
+
+    @SneakyThrows
+    private TreeMap<String, List<AlbumSimplified>> getAllNewReleases(List<Artist> artists) {
         var map = new TreeMap<String, List<AlbumSimplified>>();
-
-        var artists = spotifyApi.getUsersFollowedArtists(ModelObjectType.ARTIST)
-                .build()
-                .execute()
-                .getItems();
-
         for (Artist artist : artists) {
             var songs = Arrays.stream(spotifyApi.getArtistsAlbums(artist.getId())
-                    .build()
-                    .execute()
-                    .getItems())
+                            .build()
+                            .execute()
+                            .getItems())
                     .filter(x -> {
                         try {
                             return LocalDate.parse(x.getReleaseDate()).isAfter(LocalDate.now().minusMonths(1));
-                        }catch (DateTimeParseException e){
+                        } catch (DateTimeParseException e) {
                             return false;
                         }
-            }).toList();
+                    }).toList();
             if (songs.size() != 0) {
                 map.put(artist.getName(), songs);
             }

@@ -31,7 +31,7 @@ public class CallbackController {
     }
 
     @GetMapping("songs")
-    public TreeMap<String, List<AlbumSimplified>> getFollowedArtists(){
+    public TreeMap<String, List<AlbumSimplified>> getFollowedArtists() {
         return service.getLastReleasesFromSubscribedArtists();
     }
 }
