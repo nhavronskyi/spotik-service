@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
+import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
+
+import java.util.List;
 
 @RestController
 @RequestMapping
@@ -24,5 +27,10 @@ public class CallbackController {
     @GetMapping("playlists")
     public PlaylistSimplified[] getPlaylists() {
         return service.getPlaylists();
+    }
+
+    @GetMapping("showRu")
+    public List<PlaylistTrack> checkIfThereAreRussianTracksAdded(@RequestParam String id) {
+        return service.getRussianTracks(id);
     }
 }
