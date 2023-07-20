@@ -49,13 +49,12 @@ public class SpotifyServiceImpl implements SpotifyService {
     }
 
     @SneakyThrows
-    @Cacheable(value = CacheConstants.REQUEST_CACHE)
     public List<PlaylistTrack> getRussianTracks(String id) {
         var tracks = spotifyApi.getPlaylist(id)
                 .build()
                 .execute()
-                .getTracks().
-                getItems();
+                .getTracks()
+                .getItems();
         return Arrays.stream(tracks)
                 .filter(track -> isRussianArtist(track.getTrack().getId()))
                 .toList();
