@@ -12,7 +12,7 @@ public interface SpotifyService {
 
     List<PlaylistTrack> getRussianTracks(String id);
 
-    void deleteAllRussianTracksFromPlaylist(String playlistId);
+    void removeAllRussianTracksFromPlaylist(String playlistId);
 
     void removeTrackFromPlaylist(String playlistId, String trackId);
 }

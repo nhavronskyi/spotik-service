@@ -31,13 +31,13 @@ public class CallbackController {
         return service.getRussianTracks(id);
     }
 
-    @DeleteMapping("delete_all_ru_tracks")
-    public void deleteAllRuTracks(@RequestParam String id) {
-        service.deleteAllRussianTracksFromPlaylist(id);
+    @DeleteMapping("remove_all_ru_tracks")
+    public void removeAllRuTracks(@RequestParam String id) {
+        service.removeAllRussianTracksFromPlaylist(id);
     }
 
-    @DeleteMapping("delete_track_from_playlist")
-    public void deleteTrackFromPlaylist(@RequestParam(name = "playlist_id") String playlistId, @RequestParam(name = "track_id") String trackId) {
+    @DeleteMapping("remove_track_from_playlist")
+    public void removeTrackFromPlaylist(@RequestParam(name = "playlist_id") String playlistId, @RequestParam(name = "track_id") String trackId) {
         service.removeTrackFromPlaylist(playlistId, trackId);
     }
 }

@@ -58,7 +58,7 @@ public class SpotifyServiceImpl implements SpotifyService {
                 .toList();
     }
 
-    public void deleteAllRussianTracksFromPlaylist(String playlistId) {
+    public void removeAllRussianTracksFromPlaylist(String playlistId) {
         Arrays.stream(getPlaylistTracks(playlistId))
                 .map(PlaylistTrack::getTrack)
                 .filter(track -> isRussianArtist(track.getId()))
@@ -74,7 +74,6 @@ public class SpotifyServiceImpl implements SpotifyService {
                 });
     }
 
-    @SneakyThrows
     public void removeTrackFromPlaylist(String playlistId, String trackId) {
         Arrays.stream(getPlaylistTracks(playlistId))
                 .filter(x -> x.getTrack().getId().equals(trackId))
