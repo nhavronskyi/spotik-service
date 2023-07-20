@@ -2,6 +2,8 @@ package com.example.spotikservice.service.impl;
 
 import com.example.spotikservice.constants.CacheConstants;
 import com.example.spotikservice.service.SpotifyService;
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.hc.core5.http.HttpStatus;
@@ -11,6 +13,7 @@ import org.springframework.stereotype.Service;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
+import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 
 import java.io.IOException;
 
@@ -37,5 +40,16 @@ public class SpotifyServiceImpl implements SpotifyService {
     public PlaylistSimplified[] getPlaylists() {
         return spotifyApi.getListOfCurrentUsersPlaylists()
                 .build().execute().getItems();
+    }
+
+    @SneakyThrows
+    public void deleteRussianTracksFromPlaylist(String playlistId) {
+        PlaylistTrack[] tracks = spotifyApi.getPlaylist(playlistId).build().execute().getTracks().getItems();
+        spotifyApi.removeItemsFromPlaylist(playlistId, arrayOfPlaylistTrackToJsonArray(tracks));
+    }
+
+    private JsonArray arrayOfPlaylistTrackToJsonArray(PlaylistTrack[] tracks) {
+        Gson gson = new Gson();
+        return gson.fromJson(gson.toJson(tracks), JsonArray.class);
     }
 }
