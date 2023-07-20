@@ -11,4 +11,8 @@ public interface SpotifyService {
     int setAccessToken(String code);
 
     List<PlaylistTrack> getRussianTracks(String id);
+
+    void deleteAllRussianTracksFromPlaylist(String playlistId);
+
+    void removeTrackFromPlaylist(String playlistId, String trackId);
 }
