@@ -3,10 +3,7 @@ package com.example.spotikservice.controller;
 import com.example.spotikservice.service.SpotifyService;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 
@@ -29,8 +26,18 @@ public class CallbackController {
         return service.getPlaylists();
     }
 
-    @GetMapping("showRu")
+    @GetMapping("show_ru")
     public List<PlaylistTrack> checkIfThereAreRussianTracksAdded(@RequestParam String id) {
         return service.getRussianTracks(id);
+    }
+
+    @DeleteMapping("remove_all_ru_tracks")
+    public void removeAllRuTracks(@RequestParam String id) {
+        service.removeAllRussianTracksFromPlaylist(id);
+    }
+
+    @DeleteMapping("remove_track_from_playlist")
+    public void removeTrackFromPlaylist(@RequestParam(name = "playlist_id") String playlistId, @RequestParam(name = "track_id") String trackId) {
+        service.removeTrackFromPlaylist(playlistId, trackId);
     }
 }
