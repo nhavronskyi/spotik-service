@@ -12,8 +12,9 @@ import java.net.URI;
 @RequiredArgsConstructor
 public class AppConfig {
     private final SpotifyProps spotifyProps;
+
     @Bean
-    public SpotifyApi spotifyApi(){
+    public SpotifyApi spotifyApi() {
         return new SpotifyApi.Builder()
                 .setClientId(spotifyProps.id())
                 .setClientSecret(spotifyProps.secret())
