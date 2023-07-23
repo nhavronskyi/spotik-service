@@ -14,8 +14,7 @@ public class AuthServiceImpl implements AuthService {
     public String authorize() {
         return spotifyApi
                 .authorizationCodeUri()
-                .scope("user-follow-read")
-                .scope("playlist-modify-public")
+                .scope("user-follow-read playlist-modify-public")
                 .build()
                 .execute()
                 .toString();

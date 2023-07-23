@@ -15,9 +15,9 @@ import org.springframework.stereotype.Service;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.enums.ModelObjectType;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
+import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Artist;
-import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 
