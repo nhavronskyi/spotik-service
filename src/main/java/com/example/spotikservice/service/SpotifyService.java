@@ -5,14 +5,14 @@ import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 
 import java.util.List;
-import java.util.TreeMap;
+import java.util.Map;
 
 public interface SpotifyService {
     PlaylistSimplified[] getPlaylists();
 
     int setAccessToken(String code);
 
-    TreeMap<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists();
+    Map<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists();
 
     List<PlaylistTrack> getRussianTracks(String id);
 

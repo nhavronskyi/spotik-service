@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.stream.Collector;
 
 @Service
 @RequiredArgsConstructor
@@ -63,45 +64,46 @@ public class SpotifyServiceImpl implements SpotifyService {
     }
 
     public void removeAllRussianTracksFromPlaylist(String playlistId) {
-        Arrays.stream(getPlaylistTracks(playlistId))
+        var json = Arrays.stream(getPlaylistTracks(playlistId))
                 .map(PlaylistTrack::getTrack)
                 .filter(track -> isRussianArtist(track.getId()))
-                .map(IPlaylistItem::getUri)
-                .forEach(x -> {
-                    try {
-                        spotifyApi.removeItemsFromPlaylist(playlistId, playlistTrackToJsonArray(x))
-                                .build()
-                                .execute();
-                    } catch (IOException | SpotifyWebApiException | ParseException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                .map(this::mapToJsonObject)
+                .collect(Collector.of(
+                        JsonArray::new,
+                        JsonArray::add,
+                        (jsonElements, jsonElements2) -> {
+                            jsonElements.addAll(jsonElements2);
+                            return jsonElements;
+                        }));
+        removeFromPlaylist(playlistId, json);
     }
 
     public void removeTrackFromPlaylist(String playlistId, String trackId) {
-        Arrays.stream(getPlaylistTracks(playlistId))
-                .filter(x -> x.getTrack().getId().equals(trackId))
-                .findFirst()
+        var json = Arrays.stream(getPlaylistTracks(playlistId))
                 .map(PlaylistTrack::getTrack)
-                .map(IPlaylistItem::getUri)
-                .ifPresent(x -> {
-                    try {
-                        spotifyApi.removeItemsFromPlaylist(playlistId, playlistTrackToJsonArray(x))
-                                .build()
-                                .execute();
-                    } catch (IOException | SpotifyWebApiException | ParseException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+                .filter(x -> x.getId().equals(trackId))
+                .findFirst()
+                .map(this::mapToJsonObject)
+                .map(obj -> {
+                    JsonArray jsonArray = new JsonArray();
+                    jsonArray.add(obj);
+                    return jsonArray;
+                })
+                .orElseGet(JsonArray::new);
+        removeFromPlaylist(playlistId, json);
     }
 
-    private JsonArray playlistTrackToJsonArray(String uri) {
+    private JsonObject mapToJsonObject(IPlaylistItem iPlaylistItem) {
         JsonObject trackObject = new JsonObject();
-        trackObject.addProperty("uri", uri);
+        trackObject.addProperty("uri", iPlaylistItem.getUri());
+        return trackObject;
+    }
 
-        JsonArray jsonArray = new JsonArray();
-        jsonArray.add(trackObject);
-        return jsonArray;
+    @SneakyThrows
+    private void removeFromPlaylist(String playlistId, JsonArray jsonArray) {
+        spotifyApi.removeItemsFromPlaylist(playlistId, jsonArray)
+                .build()
+                .execute();
     }
 
     @SneakyThrows
@@ -118,18 +120,18 @@ public class SpotifyServiceImpl implements SpotifyService {
         return Arrays.stream(artists)
                 .anyMatch(artist -> artistDao.findById(artist.getId())
                         .map(SpotifyArtist::getCountry)
-                        .orElse("null")
+                        .orElse("unknown")
                         .equals("Russia"));
     }
 
     @Cacheable(value = CacheConstants.REQUEST_CACHE)
-    public TreeMap<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists() {
+    public Map<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists() {
         return getAllNewReleases(getUserFollowedArtists());
     }
 
     @SneakyThrows
     private List<Artist> getUserFollowedArtists() {
-        var artists = new ArrayList<Artist>();
+        List<Artist> artists = new LinkedList<>();
         String cursor = null;
 
         do {
