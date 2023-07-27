@@ -2,7 +2,7 @@ package com.example.spotikservice.config;
 
 import com.example.spotikservice.props.HibernateProps;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.dbcp.dbcp2.BasicDataSource;
+import org.postgresql.ds.PGSimpleDataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.orm.hibernate5.HibernateTransactionManager;
@@ -29,11 +29,10 @@ public class HibernateConfig {
 
     @Bean
     public DataSource dataSource() {
-        BasicDataSource dataSource = new BasicDataSource();
-        dataSource.setDriverClassName(props.driver());
-        dataSource.setUrl(props.url());
-        dataSource.setUsername(props.user());
-        dataSource.setPassword(props.password());
+        PGSimpleDataSource dataSource = new PGSimpleDataSource();
+        dataSource.setUrl("jdbc:postgresql://localhost:5432/postgres");
+        dataSource.setUser("postgres");
+        dataSource.setPassword("whatever");
 
         return dataSource;
     }

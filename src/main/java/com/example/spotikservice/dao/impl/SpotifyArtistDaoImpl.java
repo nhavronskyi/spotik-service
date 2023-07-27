@@ -15,7 +15,7 @@ public class SpotifyArtistDaoImpl implements SpotifyArtistDao {
 
     @Override
     public Optional<SpotifyArtist> findById(String id) {
-        try (var em = sessionFactory.createEntityManager()){
+        try (var em = sessionFactory.createEntityManager()) {
             var spotifyArtist = em.find(SpotifyArtist.class, id);
             return Optional.ofNullable(spotifyArtist);
         }
