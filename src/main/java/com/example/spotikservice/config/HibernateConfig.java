@@ -30,9 +30,9 @@ public class HibernateConfig {
     @Bean
     public DataSource dataSource() {
         PGSimpleDataSource dataSource = new PGSimpleDataSource();
-        dataSource.setUrl("jdbc:postgresql://localhost:5432/postgres");
-        dataSource.setUser("postgres");
-        dataSource.setPassword("whatever");
+        dataSource.setUrl(props.url());
+        dataSource.setUser(props.user());
+        dataSource.setPassword(props.password());
 
         return dataSource;
     }
