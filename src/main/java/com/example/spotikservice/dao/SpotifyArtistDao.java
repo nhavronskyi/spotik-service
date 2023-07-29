@@ -2,8 +2,9 @@ package com.example.spotikservice.dao;
 
 import com.example.spotikservice.entities.SpotifyArtist;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.Set;
 
 public interface SpotifyArtistDao {
-    Optional<SpotifyArtist> findById(String id);
+    List<SpotifyArtist> findAllByIds(Set<String> ids);
 }

@@ -6,7 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.hibernate.SessionFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.util.List;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -14,10 +15,12 @@ public class SpotifyArtistDaoImpl implements SpotifyArtistDao {
     private final SessionFactory sessionFactory;
 
     @Override
-    public Optional<SpotifyArtist> findById(String id) {
+    public List<SpotifyArtist> findAllByIds(Set<String> ids) {
         try (var em = sessionFactory.createEntityManager()) {
-            var spotifyArtist = em.find(SpotifyArtist.class, id);
-            return Optional.ofNullable(spotifyArtist);
+            String query = "FROM spotify_artist WHERE id IN (:ids)";
+            return em.createQuery(query, SpotifyArtist.class)
+                    .setParameter("ids", ids)
+                    .getResultList();
         }
     }
 }
