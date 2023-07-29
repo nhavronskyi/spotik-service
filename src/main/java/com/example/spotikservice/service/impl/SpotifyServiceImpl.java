@@ -103,8 +103,9 @@ public class SpotifyServiceImpl implements SpotifyService {
     }
 
     public List<PlaylistTrack> getRussianTracks(String playlistId) {
+        var russianArtistsFromPlaylist = getRussianArtistsFromPlaylist(playlistId);
         return Arrays.stream(getPlaylistTracks(playlistId))
-                .filter(track -> trackIncludesRussianArtists(track.getTrack().getId(), getRussianArtistsFromPlaylist(playlistId)))
+                .filter(track -> trackIncludesRussianArtists(track.getTrack().getId(), russianArtistsFromPlaylist))
                 .toList();
     }
 
