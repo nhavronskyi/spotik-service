@@ -2,10 +2,16 @@ package com.example.spotikservice.service.impl;
 
 import com.example.spotikservice.constants.CacheConstants;
 import com.example.spotikservice.dao.SpotifyArtistDao;
+import com.example.spotikservice.dao.UserDao;
 import com.example.spotikservice.entities.SpotifyArtist;
+import com.example.spotikservice.entities.User;
+import com.example.spotikservice.exception.UserUnauthorizedException;
 import com.example.spotikservice.service.SpotifyService;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
 import org.apache.hc.core5.http.HttpStatus;
@@ -32,14 +38,27 @@ import java.util.stream.Collector;
 public class SpotifyServiceImpl implements SpotifyService {
     private final SpotifyApi spotifyApi;
     private final SpotifyArtistDao artistDao;
+    private final UserDao userDao;
 
     @Override
-    public int setAccessToken(String code) {
+    public int setAccessToken(String code, HttpServletResponse response) {
         try {
             var execute = spotifyApi.authorizationCode(code)
                     .build()
                     .execute();
-            spotifyApi.setAccessToken(execute.getAccessToken());
+
+            String accessToken = execute.getAccessToken();
+            String refreshToken = execute.getRefreshToken();
+            spotifyApi.setAccessToken(accessToken);
+
+            String userId = spotifyApi.getCurrentUsersProfile().build().execute().getId();
+            User user = new User(userId, accessToken, refreshToken);
+            userDao.save(user);
+
+            Cookie cookie = new Cookie("user_id", userId);
+            cookie.setPath("/"); // Параметр "Path" вказує шлях, на якому доступне кукі (у цьому випадку доступне на всій домені)
+            response.addCookie(cookie);
+
             return HttpStatus.SC_OK;
         } catch (IOException | SpotifyWebApiException | ParseException e) {
             return HttpStatus.SC_UNAUTHORIZED;
@@ -49,11 +68,41 @@ public class SpotifyServiceImpl implements SpotifyService {
     @Override
     @SneakyThrows
     @Cacheable(value = CacheConstants.REQUEST_CACHE)
-    public PlaylistSimplified[] getPlaylists() {
+    public PlaylistSimplified[] getPlaylists(HttpServletRequest request) {
+        String accessToken = getAccessTokenFromCookie(request)
+                .orElseThrow(UserUnauthorizedException::new);
+
+        spotifyApi.setAccessToken(accessToken);
+
         return spotifyApi.getListOfCurrentUsersPlaylists()
                 .build()
                 .execute()
                 .getItems();
+    }
+
+    private Optional<String> getAccessTokenFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+
+        String userId = null;
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("user_id".equals(cookie.getName())) {
+                    userId = cookie.getValue();
+                    break;
+                }
+            }
+        } else {
+            return Optional.empty();
+        }
+
+        Optional<User> userOptional = userDao.findById(userId);
+
+        if (userOptional.isPresent()) {
+            User user = userOptional.get();
+            return Optional.ofNullable(user.getAccessToken());
+        } else {
+            return Optional.empty();
+        }
     }
 
     public List<PlaylistTrack> getRussianTracks(String playlistId) {

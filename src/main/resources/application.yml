@@ -1,3 +1,6 @@
 spring:
   jpa:
-    generate-ddl: true
+    hibernate:
+      ddl-auto: update
+  flyway:
+    baselineOnMigrate: true
