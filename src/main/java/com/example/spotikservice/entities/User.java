@@ -8,9 +8,11 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 @Table(name = "users")
@@ -23,4 +25,7 @@ public class User {
 
     @Column(name = "refresh_token")
     private String refreshToken;
+
+    @Column(name = "access_token_expiration_time")
+    private long accessTokenExpirationTime;
 }

@@ -22,12 +22,14 @@ import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.enums.ModelObjectType;
 import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
+import se.michaelthelin.spotify.model_objects.credentials.AuthorizationCodeCredentials;
 import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
 import se.michaelthelin.spotify.model_objects.specification.Artist;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
 import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -49,10 +51,11 @@ public class SpotifyServiceImpl implements SpotifyService {
 
             String accessToken = execute.getAccessToken();
             String refreshToken = execute.getRefreshToken();
+            long accessTokenExpirationTime = Instant.now().getEpochSecond() + execute.getExpiresIn();
             spotifyApi.setAccessToken(accessToken);
 
             String userId = spotifyApi.getCurrentUsersProfile().build().execute().getId();
-            User user = new User(userId, accessToken, refreshToken);
+            User user = new User(userId, accessToken, refreshToken, accessTokenExpirationTime);
             userDao.save(user);
 
             Cookie cookie = new Cookie("user_id", userId);
@@ -83,19 +86,35 @@ public class SpotifyServiceImpl implements SpotifyService {
     private Optional<String> getAccessTokenFromCookie(HttpServletRequest request) {
         return Optional.ofNullable(request)
                 .map(HttpServletRequest::getCookies)
-                .flatMap(cookies -> {
-                            String userId = Arrays.stream(cookies)
-                                    .filter(cookie -> "user_id".equals(cookie.getName()))
-                                    .findFirst()
-                                    .map(Cookie::getValue)
-                                    .orElse(null);
+                .flatMap(cookies -> Arrays.stream(cookies)
+                        .filter(cookie -> "user_id".equals(cookie.getName()))
+                        .findFirst()
+                        .map(Cookie::getValue))
+                .flatMap(userDao::findById)
+                .map(this::getRefreshedAccessToken);
+    }
 
-                            return Optional.ofNullable(userDao)
-                                    .map(u -> u.findById(userId))
-                                    .flatMap(u -> u)
-                                    .map(User::getAccessToken);
-                        }
-                );
+    private String getRefreshedAccessToken(User u) {
+        if (Instant.now().getEpochSecond() < u.getAccessTokenExpirationTime()) {
+            return u.getAccessToken();
+        } else {
+            try {
+                AuthorizationCodeCredentials execute = spotifyApi.authorizationCodeRefresh()
+                        .refresh_token(u.getRefreshToken())
+                        .build()
+                        .execute();
+
+                String newAccessToken = execute.getAccessToken();
+                long newAccessTokenExpirationTime = Instant.now().getEpochSecond() + execute.getExpiresIn();
+                u.setAccessToken(newAccessToken);
+                u.setAccessTokenExpirationTime(newAccessTokenExpirationTime);
+                userDao.save(u);
+
+                return newAccessToken;
+            } catch (IOException | ParseException | SpotifyWebApiException e) {
+                return null;
+            }
+        }
     }
 
     public List<PlaylistTrack> getRussianTracks(String playlistId) {
