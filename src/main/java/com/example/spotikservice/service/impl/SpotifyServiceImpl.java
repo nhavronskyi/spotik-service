@@ -81,28 +81,21 @@ public class SpotifyServiceImpl implements SpotifyService {
     }
 
     private Optional<String> getAccessTokenFromCookie(HttpServletRequest request) {
-        Cookie[] cookies = request.getCookies();
+        return Optional.ofNullable(request)
+                .map(HttpServletRequest::getCookies)
+                .flatMap(cookies -> {
+                            String userId = Arrays.stream(cookies)
+                                    .filter(cookie -> "user_id".equals(cookie.getName()))
+                                    .findFirst()
+                                    .map(Cookie::getValue)
+                                    .orElse(null);
 
-        String userId = null;
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("user_id".equals(cookie.getName())) {
-                    userId = cookie.getValue();
-                    break;
-                }
-            }
-        } else {
-            return Optional.empty();
-        }
-
-        Optional<User> userOptional = userDao.findById(userId);
-
-        if (userOptional.isPresent()) {
-            User user = userOptional.get();
-            return Optional.ofNullable(user.getAccessToken());
-        } else {
-            return Optional.empty();
-        }
+                            return Optional.ofNullable(userDao)
+                                    .map(u -> u.findById(userId))
+                                    .flatMap(u -> u)
+                                    .map(User::getAccessToken);
+                        }
+                );
     }
 
     public List<PlaylistTrack> getRussianTracks(String playlistId) {
