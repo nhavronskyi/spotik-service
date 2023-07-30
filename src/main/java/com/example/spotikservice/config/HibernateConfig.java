@@ -23,6 +23,7 @@ public class HibernateConfig {
         sessionFactory.setDataSource(dataSource());
         sessionFactory.setPackagesToScan("com.example.spotikservice");
         sessionFactory.setHibernateProperties(hibernateProperties());
+        sessionFactory.setPhysicalNamingStrategy(new SnakeCaseNamingStrategy());
 
         return sessionFactory;
     }
