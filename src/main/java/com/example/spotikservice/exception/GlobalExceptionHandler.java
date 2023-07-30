@@ -12,9 +12,4 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleUserExistsException(UserUnauthorizedException ex) {
         return ResponseEntity.status(HttpStatus.SC_UNAUTHORIZED).body(ex.getMessage());
     }
-
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleUnknownException() {
-        return ResponseEntity.status(HttpStatus.SC_BAD_REQUEST).body("Something went wrong");
-    }
 }
