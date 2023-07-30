@@ -17,7 +17,7 @@ public class SpotifyArtistDaoImpl implements SpotifyArtistDao {
     @Override
     public List<SpotifyArtist> findAllByIdsAndCountry(Set<String> ids, String country) {
         try (var em = sessionFactory.createEntityManager()) {
-            String query = "FROM spotify_artist WHERE country = (country) AND id IN (:ids)";
+            String query = "FROM spotify_artist WHERE country = (:country) AND id IN (:ids)";
             return em.createQuery(query, SpotifyArtist.class)
                     .setParameter("country", country)
                     .setParameter("ids", ids)
