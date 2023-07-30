@@ -29,6 +29,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -156,34 +157,35 @@ public class SpotifyServiceImpl implements SpotifyService {
         return spotifyApi.getPlaylist(playlistId).build().execute().getTracks().getItems();
     }
 
-    @SneakyThrows
-    private List<String> getRussianArtistsFromPlaylist(String playlistId){
-        var list = Arrays.stream(spotifyApi.getPlaylist(playlistId)
-                .build()
-                .execute()
-                .getTracks()
-                .getItems())
+    private List<String> getRussianArtistsFromPlaylist(String playlistId) {
+        var trackList = Arrays.stream(getPlaylistTracks(playlistId))
                 .map(PlaylistTrack::getTrack)
                 .map(IPlaylistItem::getId)
                 .toList();
 
-        var uniqueArtistsIdsFromPlaylist = new HashSet<String>();
-
-        for (String trackId : list) {
-            var artists = Arrays.stream(spotifyApi.getTrack(trackId)
-                    .build()
-                    .execute()
-                    .getArtists())
-                    .map(ArtistSimplified::getId)
-                    .toList();
-
-            uniqueArtistsIdsFromPlaylist.addAll(artists);
-        }
-
-        return artistDao.findAllByIds(uniqueArtistsIdsFromPlaylist).stream()
-                .filter(x -> x.getCountry().equals("Russia"))
+        return artistDao.findAllByIdsAndCountry(getArtistsIdsFromTracks(trackList), "Russia").stream()
                 .map(SpotifyArtist::getId)
                 .toList();
+    }
+
+    @SneakyThrows
+    private Set<String> getArtistsIdsFromTracks(List<String> trackIds) {
+        var artistList = new HashSet<String>();
+
+        for (int i = 0; i < trackIds.size(); i += 50) {
+            var subList = trackIds.subList(i, Math.min(i + 50, trackIds.size()));
+
+            var tracks = spotifyApi.getSeveralTracks(subList.toArray(String[]::new))
+                    .build()
+                    .execute();
+            Set<String> artists = Arrays.stream(tracks)
+                    .map(Track::getArtists)
+                    .flatMap(Arrays::stream)
+                    .map(ArtistSimplified::getId)
+                    .collect(Collectors.toSet());
+            artistList.addAll(artists);
+        }
+        return artistList;
     }
 
     @SneakyThrows
@@ -230,8 +232,8 @@ public class SpotifyServiceImpl implements SpotifyService {
     }
 
     @SneakyThrows
-    private TreeMap<String, List<AlbumSimplified>> getAllNewReleases(List<Artist> artists) {
-        var map = new TreeMap<String, List<AlbumSimplified>>();
+    private Map<String, List<AlbumSimplified>> getAllNewReleases(List<Artist> artists) {
+        var map = new HashMap<String, List<AlbumSimplified>>();
         for (Artist artist : artists) {
             var songs = Arrays.stream(spotifyApi.getArtistsAlbums(artist.getId())
                             .build()
