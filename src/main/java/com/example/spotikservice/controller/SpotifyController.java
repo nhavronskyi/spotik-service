@@ -1,8 +1,6 @@
 package com.example.spotikservice.controller;
 
 import com.example.spotikservice.service.SpotifyService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
@@ -15,17 +13,12 @@ import java.util.Map;
 @RestController
 @RequestMapping
 @RequiredArgsConstructor
-public class CallbackController {
+public class SpotifyController {
     private final SpotifyService service;
 
-    @GetMapping
-    public int setAccessToken(@RequestParam String code, HttpServletResponse response) {
-        return service.setAccessToken(code, response);
-    }
-
     @GetMapping("playlists")
-    public PlaylistSimplified[] getPlaylists(HttpServletRequest request) {
-        return service.getPlaylists(request);
+    public PlaylistSimplified[] getPlaylists() {
+        return service.getPlaylists();
     }
 
     @GetMapping("songs")
