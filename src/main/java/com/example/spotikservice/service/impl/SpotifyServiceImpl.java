@@ -14,7 +14,6 @@ import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.enums.ModelObjectType;
 import se.michaelthelin.spotify.model_objects.IPlaylistItem;
 import se.michaelthelin.spotify.model_objects.specification.*;
-import se.michaelthelin.spotify.model_objects.credentials.AuthorizationCodeCredentials;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
@@ -31,22 +30,127 @@ public class SpotifyServiceImpl implements SpotifyService {
     @Override
     @SneakyThrows
     @Cacheable(value = CacheConstants.REQUEST_CACHE)
-    public PlaylistSimplified[] getPlaylists() {
-        return spotifyApi.getListOfCurrentUsersPlaylists()
-                .build()
-                .execute()
-                .getItems();
-    }
-
-    public List<PlaylistTrack> getRussianTracks(String playlistId) {
-        var russianArtistsFromPlaylist = getRussianArtistsFromPlaylist(playlistId);
-        return Arrays.stream(getPlaylistTracks(playlistId))
-                .filter(track -> trackIncludesRussianArtists(track.getTrack().getId(), russianArtistsFromPlaylist))
+    public List<PlaylistSimplified> getPlaylists() {
+        return Arrays.stream(spotifyApi.getListOfCurrentUsersPlaylists()
+                        .build()
+                        .execute()
+                        .getItems())
                 .toList();
     }
 
+    @Override
+    @SneakyThrows
+    public List<Album> getAlbums() {
+        return Arrays.stream(spotifyApi.getCurrentUsersSavedAlbums().build()
+                        .execute().getItems())
+                .map(SavedAlbum::getAlbum)
+                .toList();
+    }
+
+    @SneakyThrows
+    @Override
+    public List<Track> getSavedSongs() {
+        return Arrays.stream(spotifyApi.getUsersSavedTracks()
+                        .build()
+                        .execute()
+                        .getItems())
+                .map(SavedTrack::getTrack)
+                .toList();
+    }
+
+
+    public List<PlaylistTrack> getRussianTracksFromPlaylist(String playlistId) {
+        var trackList = Arrays.stream(getPlaylistTracks(playlistId))
+                .map(PlaylistTrack::getTrack)
+                .map(IPlaylistItem::getId)
+                .toList();
+        var artists = getRussianArtistsFromTrackId(trackList);
+        var tracks = getRussianTrackIds(trackList);
+        return Arrays.stream(getPlaylistTracks(playlistId))
+                .filter(track -> tracks.contains(track.getTrack().getId()) || trackIncludesRussianArtists(track.getTrack().getId(), artists))
+                .toList();
+    }
+
+    @SneakyThrows
+    private List<String> getRussianTrackIds(List<String> trackList) {
+        var tracksList = new LinkedList<String>();
+
+        for (int i = 0; i < trackList.size(); i += 50) {
+            var subList = trackList.subList(i, Math.min(i + 50, trackList.size()));
+
+            Track[] tracks = spotifyApi.getSeveralTracks(subList.toArray(String[]::new))
+                    .build().execute();
+            var ruExternalIds = Arrays.stream(tracks)
+                    .map(Track::getExternalIds)
+                    .map(ExternalId::getExternalIds)
+                    .flatMap(x -> x.values().stream())
+                    .toList();
+
+            for (int j = 0; j < tracks.length; j++) {
+                if (ruExternalIds.get(j).startsWith("RU")) {
+                    tracksList.add(tracks[j].getId());
+                }
+            }
+        }
+        return tracksList;
+    }
+
+    @SneakyThrows
+    public List<TrackSimplified> getRussianTracksFromAlbum(String albumId) {
+        var trackArr = spotifyApi.getAlbum(albumId).build().execute().getTracks().getItems();
+        List<String> trackList = Arrays.stream(trackArr)
+                .map(TrackSimplified::getId)
+                .toList();
+        var tracks = getRussianTrackIds(trackList);
+        var artists = getRussianArtistsFromTrackId(trackList);
+        return Arrays.stream(trackArr)
+                .filter(track -> tracks.contains(track.getId()) || trackIncludesRussianArtists(track.getId(), artists))
+                .toList();
+    }
+
+    @SneakyThrows
+    @Override
+    public List<Track> getRussianTracksFromAccount() {
+
+        var playlistsTracks = getPlaylists().stream()
+                .map(PlaylistSimplified::getId)
+                .map(this::getRussianTracksFromPlaylist)
+                .flatMap(track -> track.stream()
+                        .map(PlaylistTrack::getTrack)
+                        .map(IPlaylistItem::getId))
+                .distinct()
+                .toList();
+
+        var albumsTracks = getAlbums().stream()
+                .map(Album::getId)
+                .map(this::getRussianTracksFromAlbum)
+                .flatMap(track -> track.stream()
+                        .map(TrackSimplified::getId))
+                .toList();
+
+        var savedTracks = getRussianTrackIds(getSavedSongs().stream()
+                .map(Track::getId).toList());
+
+        HashSet<String> tracks = new HashSet<>();
+        tracks.addAll(playlistsTracks);
+        tracks.addAll(albumsTracks);
+        tracks.addAll(savedTracks);
+
+        var tracklist = tracks.stream().toList();
+        var list = new ArrayList<Track>();
+
+        for (int i = 0; i < tracklist.size(); i += 50) {
+            var subList = tracklist.subList(i, Math.min(i + 50, tracklist.size())).toArray(String[]::new);
+            list.addAll(Arrays.stream(spotifyApi.getSeveralTracks(subList)
+                    .build()
+                    .execute()).toList());
+        }
+
+        return list;
+    }
+
     public void removeAllRussianTracksFromPlaylist(String playlistId) {
-        var json = getRussianTracks(playlistId).stream()
+        var json = getRussianTracksFromPlaylist(playlistId).stream()
                 .map(PlaylistTrack::getTrack)
                 .map(this::mapToJsonObject)
                 .collect(Collector.of(
@@ -92,15 +196,10 @@ public class SpotifyServiceImpl implements SpotifyService {
         return spotifyApi.getPlaylist(playlistId).build().execute().getTracks().getItems();
     }
 
-    private List<String> getRussianArtistsFromPlaylist(String playlistId) {
-        var trackList = Arrays.stream(getPlaylistTracks(playlistId))
-                .map(PlaylistTrack::getTrack)
-                .map(IPlaylistItem::getId)
-                .toList();
-
-        return artistDao.findAllByIdsAndCountry(getArtistsIdsFromTracks(trackList), "Russia").stream()
+    private List<String> getRussianArtistsFromTrackId(List<String> trackList) {
+        return new ArrayList<>(artistDao.findAllByIdsAndCountry(getArtistsIdsFromTracks(trackList), "Russia").stream()
                 .map(SpotifyArtist::getId)
-                .toList();
+                .toList());
     }
 
     @SneakyThrows
@@ -139,7 +238,7 @@ public class SpotifyServiceImpl implements SpotifyService {
     }
 
     @Cacheable(value = CacheConstants.REQUEST_CACHE)
-    public Map<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists() {
+    public TreeMap<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists() {
         return getAllNewReleases(getUserFollowedArtists());
     }
 
@@ -167,8 +266,8 @@ public class SpotifyServiceImpl implements SpotifyService {
     }
 
     @SneakyThrows
-    private Map<String, List<AlbumSimplified>> getAllNewReleases(List<Artist> artists) {
-        var map = new HashMap<String, List<AlbumSimplified>>();
+    private TreeMap<String, List<AlbumSimplified>> getAllNewReleases(List<Artist> artists) {
+        var map = new TreeMap<String, List<AlbumSimplified>>();
         for (Artist artist : artists) {
             var songs = Arrays.stream(spotifyApi.getArtistsAlbums(artist.getId())
                             .build()
