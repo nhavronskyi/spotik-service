@@ -1,6 +1,6 @@
 spring:
   application:
-    name: db
+    name: db, spotify
   cloud:
     config:
       uri: http://localhost:8888
