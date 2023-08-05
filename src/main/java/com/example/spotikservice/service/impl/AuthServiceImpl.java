@@ -15,6 +15,8 @@ import se.michaelthelin.spotify.exceptions.SpotifyWebApiException;
 import java.io.IOException;
 import java.time.Instant;
 
+import static se.michaelthelin.spotify.enums.AuthorizationScope.*;
+
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -26,7 +28,12 @@ public class AuthServiceImpl implements AuthService {
     public String authorize() {
         return spotifyApi
                 .authorizationCodeUri()
-                .scope("user-follow-read playlist-modify-public")
+                .scope(USER_LIBRARY_READ,
+                        USER_LIBRARY_MODIFY,
+                        USER_FOLLOW_READ,
+                        USER_FOLLOW_MODIFY,
+                        PLAYLIST_MODIFY_PRIVATE,
+                        PLAYLIST_MODIFY_PUBLIC)
                 .build()
                 .execute()
                 .toString();
