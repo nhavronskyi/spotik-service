@@ -12,15 +12,15 @@ public interface SpotifyService {
 
     List<Track> getSavedSongs();
 
-    List<TrackSimplified> getRussianTracksFromAlbum(String albumId);
+    List<TrackSimplified> getTracksFromAlbumByCountry(String albumId, String code);
 
     TreeMap<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists();
 
-    List<PlaylistTrack> getRussianTracksFromPlaylist(String id);
+    List<PlaylistTrack> getTracksFromPlaylistByCountry(String id, String code);
 
-    List<Track> getRussianTracksFromAccount();
+    List<Track> getTracksFromAccountByCountry(String code);
 
-    void removeAllRussianTracksFromPlaylist(String playlistId);
+    void removeAllTracksFromPlaylistByCountry(String playlistId, String code);
 
     void removeTrackFromPlaylist(String playlistId, String trackId);
 }

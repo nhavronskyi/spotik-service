@@ -1,7 +1,9 @@
 package com.example.spotikservice.service.impl;
 
 import com.example.spotikservice.constants.CacheConstants;
+import com.example.spotikservice.dao.CountryDao;
 import com.example.spotikservice.dao.SpotifyArtistDao;
+import com.example.spotikservice.entities.Country;
 import com.example.spotikservice.entities.SpotifyArtist;
 import com.example.spotikservice.service.SpotifyService;
 import com.google.gson.JsonArray;
@@ -18,6 +20,7 @@ import se.michaelthelin.spotify.model_objects.specification.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.*;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -26,6 +29,7 @@ import java.util.stream.Collectors;
 public class SpotifyServiceImpl implements SpotifyService {
     private final SpotifyApi spotifyApi;
     private final SpotifyArtistDao artistDao;
+    private final CountryDao countryDao;
 
     @Override
     @SneakyThrows
@@ -59,62 +63,44 @@ public class SpotifyServiceImpl implements SpotifyService {
     }
 
 
-    public List<PlaylistTrack> getRussianTracksFromPlaylist(String playlistId) {
+    public List<PlaylistTrack> getTracksFromPlaylistByCountry(String playlistId, String code) {
+        Country country = countryDao.findCountry(code);
         var trackList = Arrays.stream(getPlaylistTracks(playlistId))
                 .map(PlaylistTrack::getTrack)
                 .map(IPlaylistItem::getId)
                 .toList();
-        var artists = getRussianArtistsFromTrackId(trackList);
-        var tracks = getRussianTrackIds(trackList);
+        var artists = getArtistsFromTrackIdAndCountry(trackList, country.getCountry());
+        var tracks = getTrackIdsByCountry(trackList, country.getCode());
         return Arrays.stream(getPlaylistTracks(playlistId))
-                .filter(track -> tracks.contains(track.getTrack().getId()) || trackIncludesRussianArtists(track.getTrack().getId(), artists))
+                .filter(playlistPredicate(artists, tracks))
                 .toList();
     }
 
     @SneakyThrows
-    private List<String> getRussianTrackIds(List<String> trackList) {
-        var tracksList = new LinkedList<String>();
-
-        for (int i = 0; i < trackList.size(); i += 50) {
-            var subList = trackList.subList(i, Math.min(i + 50, trackList.size()));
-
-            Track[] tracks = spotifyApi.getSeveralTracks(subList.toArray(String[]::new))
-                    .build().execute();
-            var ruExternalIds = Arrays.stream(tracks)
-                    .map(Track::getExternalIds)
-                    .map(ExternalId::getExternalIds)
-                    .flatMap(x -> x.values().stream())
-                    .toList();
-
-            for (int j = 0; j < tracks.length; j++) {
-                if (ruExternalIds.get(j).startsWith("RU")) {
-                    tracksList.add(tracks[j].getId());
-                }
-            }
-        }
-        return tracksList;
-    }
-
-    @SneakyThrows
-    public List<TrackSimplified> getRussianTracksFromAlbum(String albumId) {
+    public List<TrackSimplified> getTracksFromAlbumByCountry(String albumId, String code) {
+        Country country = countryDao.findCountry(code);
         var trackArr = spotifyApi.getAlbum(albumId).build().execute().getTracks().getItems();
         List<String> trackList = Arrays.stream(trackArr)
                 .map(TrackSimplified::getId)
                 .toList();
-        var tracks = getRussianTrackIds(trackList);
-        var artists = getRussianArtistsFromTrackId(trackList);
+        var tracks = getTrackIdsByCountry(trackList, country.getCode());
+        var artists = getArtistsFromTrackIdAndCountry(trackList, country.getCountry());
         return Arrays.stream(trackArr)
-                .filter(track -> tracks.contains(track.getId()) || trackIncludesRussianArtists(track.getId(), artists))
+                .filter(albumPredicate(tracks, artists))
                 .toList();
     }
 
+    private Predicate<? super TrackSimplified> albumPredicate(List<String> tracks, List<String> artists) {
+        return track -> tracks.contains(track.getId()) || trackIncludesArtists(track.getId(), artists);
+    }
+
+
     @SneakyThrows
     @Override
-    public List<Track> getRussianTracksFromAccount() {
-
+    public List<Track> getTracksFromAccountByCountry(String code) {
         var playlistsTracks = getPlaylists().stream()
                 .map(PlaylistSimplified::getId)
-                .map(this::getRussianTracksFromPlaylist)
+                .map(id -> getTracksFromPlaylistByCountry(id, code))
                 .flatMap(track -> track.stream()
                         .map(PlaylistTrack::getTrack)
                         .map(IPlaylistItem::getId))
@@ -123,13 +109,13 @@ public class SpotifyServiceImpl implements SpotifyService {
 
         var albumsTracks = getAlbums().stream()
                 .map(Album::getId)
-                .map(this::getRussianTracksFromAlbum)
+                .map(albumId -> getTracksFromAlbumByCountry(albumId, code))
                 .flatMap(track -> track.stream()
                         .map(TrackSimplified::getId))
                 .toList();
 
-        var savedTracks = getRussianTrackIds(getSavedSongs().stream()
-                .map(Track::getId).toList());
+        var savedTracks = getTrackIdsByCountry(getSavedSongs().stream()
+                .map(Track::getId).toList(), code);
 
         HashSet<String> tracks = new HashSet<>();
         tracks.addAll(playlistsTracks);
@@ -149,8 +135,8 @@ public class SpotifyServiceImpl implements SpotifyService {
         return list;
     }
 
-    public void removeAllRussianTracksFromPlaylist(String playlistId) {
-        var json = getRussianTracksFromPlaylist(playlistId).stream()
+    public void removeAllTracksFromPlaylistByCountry(String playlistId, String code) {
+        var json = getTracksFromPlaylistByCountry(playlistId, code).stream()
                 .map(PlaylistTrack::getTrack)
                 .map(this::mapToJsonObject)
                 .collect(Collector.of(
@@ -178,6 +164,39 @@ public class SpotifyServiceImpl implements SpotifyService {
         removeFromPlaylist(playlistId, json);
     }
 
+    private Predicate<? super PlaylistTrack> playlistPredicate(List<String> artists, List<String> tracks) {
+        return track -> tracks.contains(track.getTrack().getId()) || trackIncludesArtists(track.getTrack().getId(), artists);
+    }
+
+    /**
+     * @param code UA
+     *             RU
+     */
+    @SneakyThrows
+    private List<String> getTrackIdsByCountry(List<String> trackList, String code) {
+        Country country = countryDao.findCountry(code);
+        var tracksList = new LinkedList<String>();
+
+        for (int i = 0; i < trackList.size(); i += 50) {
+            var subList = trackList.subList(i, Math.min(i + 50, trackList.size()));
+
+            Track[] tracks = spotifyApi.getSeveralTracks(subList.toArray(String[]::new))
+                    .build().execute();
+            var ruExternalIds = Arrays.stream(tracks)
+                    .map(Track::getExternalIds)
+                    .map(ExternalId::getExternalIds)
+                    .flatMap(x -> x.values().stream())
+                    .toList();
+
+            for (int j = 0; j < tracks.length; j++) {
+                if (ruExternalIds.get(j).startsWith(country.getCode())) {
+                    tracksList.add(tracks[j].getId());
+                }
+            }
+        }
+        return tracksList;
+    }
+
     private JsonObject mapToJsonObject(IPlaylistItem iPlaylistItem) {
         JsonObject trackObject = new JsonObject();
         trackObject.addProperty("uri", iPlaylistItem.getUri());
@@ -196,8 +215,12 @@ public class SpotifyServiceImpl implements SpotifyService {
         return spotifyApi.getPlaylist(playlistId).build().execute().getTracks().getItems();
     }
 
-    private List<String> getRussianArtistsFromTrackId(List<String> trackList) {
-        return new ArrayList<>(artistDao.findAllByIdsAndCountry(getArtistsIdsFromTracks(trackList), "Russia").stream()
+    /**
+     * @param country Ukraine
+     *                Russia
+     */
+    private List<String> getArtistsFromTrackIdAndCountry(List<String> trackList, String country) {
+        return new ArrayList<>(artistDao.findAllByIdsAndCountry(getArtistsIdsFromTracks(trackList), country).stream()
                 .map(SpotifyArtist::getId)
                 .toList());
     }
@@ -223,7 +246,7 @@ public class SpotifyServiceImpl implements SpotifyService {
     }
 
     @SneakyThrows
-    private boolean trackIncludesRussianArtists(String trackId, List<String> ruArtists) {
+    private boolean trackIncludesArtists(String trackId, List<String> artistsList) {
         var artists = spotifyApi.getTrack(trackId)
                 .build()
                 .execute()
@@ -234,7 +257,7 @@ public class SpotifyServiceImpl implements SpotifyService {
                 .toList();
 
         return artistsIds.stream()
-                .anyMatch(ruArtists::contains);
+                .anyMatch(artistsList::contains);
     }
 
     @Cacheable(value = CacheConstants.REQUEST_CACHE)

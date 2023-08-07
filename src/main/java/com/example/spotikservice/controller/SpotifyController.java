@@ -34,23 +34,23 @@ public class SpotifyController {
         return service.getLastReleasesFromSubscribedArtists();
     }
 
-    @GetMapping("show-ru")
-    public List<PlaylistTrack> checkIfThereAreRussianTracksAdded(@RequestParam String id) {
-        return service.getRussianTracksFromPlaylist(id);
+    @GetMapping("show")
+    public List<PlaylistTrack> getAllTracksFromPlaylistByCountry(@RequestParam String id, @RequestParam String code) {
+        return service.getTracksFromPlaylistByCountry(id, code);
     }
 
     @GetMapping("account-scan")
-    public List<Track> checkIfThereAreRussianTracksAddedInWholeAccount() {
-        return service.getRussianTracksFromAccount();
+    public List<Track> getAllTracksFromAccountByCountry(@RequestParam String code) {
+        return service.getTracksFromAccountByCountry(code);
     }
 
-    @DeleteMapping("remove-all-ru-tracks")
-    public void removeAllRuTracks(@RequestParam String id) {
-        service.removeAllRussianTracksFromPlaylist(id);
+    @DeleteMapping("remove-all-tracks-from-playlist")
+    public void removeAllTracksByCountry(@RequestParam String id, @RequestParam String code) {
+        service.removeAllTracksFromPlaylistByCountry(id, code);
     }
 
     @DeleteMapping("remove-track-from-playlist")
-    public void removeTrackFromPlaylist(@RequestParam(name = "playlist-id") String playlistId, @RequestParam(name = "track-id") String trackId) {
-        service.removeTrackFromPlaylist(playlistId, trackId);
+    public void removeTrackFromPlaylist(@RequestParam String id, @RequestParam String track) {
+        service.removeTrackFromPlaylist(id, track);
     }
 }
