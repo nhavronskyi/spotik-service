@@ -1,20 +1,26 @@
 package com.example.spotikservice.service;
 
-import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
-import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
-import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
+import se.michaelthelin.spotify.model_objects.specification.*;
 
 import java.util.List;
-import java.util.Map;
+import java.util.TreeMap;
 
 public interface SpotifyService {
-    PlaylistSimplified[] getPlaylists();
+    List<PlaylistSimplified> getPlaylists();
 
-    Map<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists();
+    List<Album> getAlbums();
 
-    List<PlaylistTrack> getRussianTracks(String id);
+    List<Track> getSavedSongs();
 
-    void removeAllRussianTracksFromPlaylist(String playlistId);
+    List<TrackSimplified> getTracksFromAlbumByCountry(String albumId, String code);
+
+    TreeMap<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists();
+
+    List<PlaylistTrack> getTracksFromPlaylistByCountry(String id, String code);
+
+    List<Track> getTracksFromAccountByCountry(String code);
+
+    void removeAllTracksFromPlaylistByCountry(String playlistId, String code);
 
     void removeTrackFromPlaylist(String playlistId, String trackId);
 }

@@ -3,12 +3,10 @@ package com.example.spotikservice.controller;
 import com.example.spotikservice.service.SpotifyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
-import se.michaelthelin.spotify.model_objects.specification.PlaylistSimplified;
-import se.michaelthelin.spotify.model_objects.specification.PlaylistTrack;
+import se.michaelthelin.spotify.model_objects.specification.*;
 
 import java.util.List;
-import java.util.Map;
+import java.util.TreeMap;
 
 @RestController
 @RequestMapping
@@ -17,27 +15,42 @@ public class SpotifyController {
     private final SpotifyService service;
 
     @GetMapping("playlists")
-    public PlaylistSimplified[] getPlaylists() {
+    public List<PlaylistSimplified> getPlaylists() {
         return service.getPlaylists();
     }
 
+    @GetMapping("albums")
+    public List<Album> getAlbums() {
+        return service.getAlbums();
+    }
+
     @GetMapping("songs")
-    public Map<String, List<AlbumSimplified>> getFollowedArtists() {
+    public List<Track> getSavedSongs() {
+        return service.getSavedSongs();
+    }
+
+    @GetMapping("last-releases")
+    public TreeMap<String, List<AlbumSimplified>> getFollowedArtists() {
         return service.getLastReleasesFromSubscribedArtists();
     }
 
-    @GetMapping("show-ru")
-    public List<PlaylistTrack> checkIfThereAreRussianTracksAdded(@RequestParam String id) {
-        return service.getRussianTracks(id);
+    @GetMapping("show")
+    public List<PlaylistTrack> getAllTracksFromPlaylistByCountry(@RequestParam String id, @RequestParam String code) {
+        return service.getTracksFromPlaylistByCountry(id, code);
     }
 
-    @DeleteMapping("remove-all-ru-tracks")
-    public void removeAllRuTracks(@RequestParam String id) {
-        service.removeAllRussianTracksFromPlaylist(id);
+    @GetMapping("account-scan")
+    public List<Track> getAllTracksFromAccountByCountry(@RequestParam String code) {
+        return service.getTracksFromAccountByCountry(code);
+    }
+
+    @DeleteMapping("remove-all-tracks-from-playlist")
+    public void removeAllTracksByCountry(@RequestParam String id, @RequestParam String code) {
+        service.removeAllTracksFromPlaylistByCountry(id, code);
     }
 
     @DeleteMapping("remove-track-from-playlist")
-    public void removeTrackFromPlaylist(@RequestParam(name = "playlist-id") String playlistId, @RequestParam(name = "track-id") String trackId) {
-        service.removeTrackFromPlaylist(playlistId, trackId);
+    public void removeTrackFromPlaylist(@RequestParam String id, @RequestParam String track) {
+        service.removeTrackFromPlaylist(id, track);
     }
 }
