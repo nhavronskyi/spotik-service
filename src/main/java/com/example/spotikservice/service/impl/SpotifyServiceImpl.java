@@ -32,8 +32,12 @@ public class SpotifyServiceImpl implements SpotifyService {
     private final CountryDao countryDao;
 
     @Override
+    public String getAccountId() {
+        return spotifyApi.getClientId();
+    }
+
+    @Override
     @SneakyThrows
-    @Cacheable(value = CacheConstants.REQUEST_CACHE)
     public List<PlaylistSimplified> getPlaylists() {
         return Arrays.stream(spotifyApi.getListOfCurrentUsersPlaylists()
                         .build()
@@ -302,7 +306,7 @@ public class SpotifyServiceImpl implements SpotifyService {
                             return false;
                         }
                     }).toList();
-            if (songs.size() != 0) {
+            if (!songs.isEmpty()) {
                 map.put(artist.getName(), songs);
             }
         }

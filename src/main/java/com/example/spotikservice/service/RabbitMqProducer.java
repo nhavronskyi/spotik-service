@@ -1,12 +1,13 @@
 package com.example.spotikservice.service;
 
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import lombok.*;
 import org.springframework.amqp.core.Binding;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Service;
 import se.michaelthelin.spotify.model_objects.specification.AlbumSimplified;
 
-import java.util.stream.Collectors;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -15,13 +16,33 @@ public class RabbitMqProducer {
     private final Binding binding;
     private final SpotifyService service;
 
+    @SneakyThrows
     public void sendSongs() {
-        template.convertAndSend(binding.getExchange(), binding.getRoutingKey(), service.getLastReleasesFromSubscribedArtists()
+        var artistSongs = service.getLastReleasesFromSubscribedArtists()
                 .entrySet()
                 .stream()
-                .map(track -> track.getKey() + ": " + track.getValue().stream()
+                .map(x -> new ArtistSongs(x.getKey(), x.getValue().stream()
                         .map(AlbumSimplified::getName)
-                        .collect(Collectors.joining(", ")))
-                .collect(Collectors.joining("\n")));
+                        .toList()))
+                .toList();
+        var idArtistSongs =new IdArtistSongs(service.getAccountId(), artistSongs);
+        var json = new JsonMapper().writeValueAsString(idArtistSongs);
+        template.convertAndSend(binding.getExchange(), binding.getRoutingKey(), json);
+    }
+
+    @AllArgsConstructor
+    @Getter
+    @Setter
+    private static class IdArtistSongs {
+        private final String id;
+        private final List<ArtistSongs> artists;
+    }
+
+    @AllArgsConstructor
+    @Getter
+    @Setter
+    private static class ArtistSongs {
+        private final String artist;
+        private final List<String> songs;
     }
 }
