@@ -15,12 +15,12 @@ public class RabbitMQConfig {
     private final RabbitMQProps props;
 
     @Bean
-    public Queue queue(){
+    public Queue queue() {
         return new Queue(props.queue());
     }
 
     @Bean
-    public TopicExchange exchange(){
+    public TopicExchange exchange() {
         return new TopicExchange(props.exchange());
     }
 

@@ -1,6 +1,5 @@
 package com.example.spotikservice.service.impl;
 
-import com.example.spotikservice.constants.CacheConstants;
 import com.example.spotikservice.dao.CountryDao;
 import com.example.spotikservice.dao.SpotifyArtistDao;
 import com.example.spotikservice.entities.Country;
@@ -10,7 +9,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.enums.ModelObjectType;

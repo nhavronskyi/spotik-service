@@ -8,7 +8,6 @@ import se.michaelthelin.spotify.model_objects.specification.*;
 
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
 
 @RestController
 @RequestMapping
@@ -16,6 +15,7 @@ import java.util.TreeMap;
 public class SpotifyController {
     private final SpotifyService service;
     private final RabbitMqProducer producer;
+
     @GetMapping("playlists")
     public List<PlaylistSimplified> getPlaylists() {
         return service.getPlaylists();

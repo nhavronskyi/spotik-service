@@ -25,7 +25,7 @@ public class RabbitMqProducer {
                         .map(AlbumSimplified::getName)
                         .toList()))
                 .toList();
-        var idArtistSongs =new IdArtistSongs(service.getAccountId(), artistSongs);
+        var idArtistSongs = new IdArtistSongs(service.getAccountId(), artistSongs);
         var json = new JsonMapper().writeValueAsString(idArtistSongs);
         template.convertAndSend(binding.getExchange(), binding.getRoutingKey(), json);
     }
