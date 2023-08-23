@@ -1,11 +1,13 @@
 package com.example.spotikservice.controller;
 
+import com.example.spotikservice.service.RabbitMqProducer;
 import com.example.spotikservice.service.SpotifyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 import se.michaelthelin.spotify.model_objects.specification.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
 
 @RestController
@@ -13,7 +15,7 @@ import java.util.TreeMap;
 @RequiredArgsConstructor
 public class SpotifyController {
     private final SpotifyService service;
-
+    private final RabbitMqProducer producer;
     @GetMapping("playlists")
     public List<PlaylistSimplified> getPlaylists() {
         return service.getPlaylists();
@@ -30,7 +32,8 @@ public class SpotifyController {
     }
 
     @GetMapping("last-releases")
-    public TreeMap<String, List<AlbumSimplified>> getFollowedArtists() {
+    public Map<String, List<AlbumSimplified>> getFollowedArtists() {
+        producer.sendSongs();
         return service.getLastReleasesFromSubscribedArtists();
     }
 

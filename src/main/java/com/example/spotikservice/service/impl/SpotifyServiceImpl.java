@@ -260,7 +260,6 @@ public class SpotifyServiceImpl implements SpotifyService {
                 .anyMatch(artistsList::contains);
     }
 
-    @Cacheable(value = CacheConstants.REQUEST_CACHE)
     public TreeMap<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists() {
         return getAllNewReleases(getUserFollowedArtists());
     }
