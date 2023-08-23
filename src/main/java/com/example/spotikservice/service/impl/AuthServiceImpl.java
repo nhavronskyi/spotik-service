@@ -33,7 +33,8 @@ public class AuthServiceImpl implements AuthService {
                         USER_FOLLOW_READ,
                         USER_FOLLOW_MODIFY,
                         PLAYLIST_MODIFY_PRIVATE,
-                        PLAYLIST_MODIFY_PUBLIC)
+                        PLAYLIST_MODIFY_PUBLIC,
+                        USER_READ_EMAIL)
                 .build()
                 .execute()
                 .toString();
@@ -51,8 +52,9 @@ public class AuthServiceImpl implements AuthService {
             long accessTokenExpirationTime = Instant.now().getEpochSecond() + execute.getExpiresIn();
             spotifyApi.setAccessToken(accessToken);
 
-            String userId = spotifyApi.getCurrentUsersProfile().build().execute().getId();
-            User user = new User(userId, accessToken, refreshToken, accessTokenExpirationTime);
+            var profile = spotifyApi.getCurrentUsersProfile().build().execute();
+            String userId = profile.getId();
+            User user = new User(userId, accessToken, refreshToken, accessTokenExpirationTime, profile.getDisplayName(), profile.getEmail());
             userDao.save(user);
 
             Cookie cookie = new Cookie("user_id", userId);
