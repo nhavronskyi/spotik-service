@@ -4,8 +4,9 @@ import se.michaelthelin.spotify.model_objects.specification.*;
 
 import java.util.List;
 import java.util.TreeMap;
-
 public interface SpotifyService {
+    String getAccountEmail();
+
     List<PlaylistSimplified> getPlaylists();
 
     List<Album> getAlbums();

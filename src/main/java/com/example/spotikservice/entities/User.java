@@ -23,4 +23,8 @@ public class User {
     private String refreshToken;
 
     private long accessTokenExpirationTime;
+
+    private String username;
+
+    private String email;
 }

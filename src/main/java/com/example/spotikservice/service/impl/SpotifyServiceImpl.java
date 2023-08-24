@@ -1,6 +1,5 @@
 package com.example.spotikservice.service.impl;
 
-import com.example.spotikservice.constants.CacheConstants;
 import com.example.spotikservice.dao.CountryDao;
 import com.example.spotikservice.dao.SpotifyArtistDao;
 import com.example.spotikservice.entities.Country;
@@ -10,7 +9,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import lombok.RequiredArgsConstructor;
 import lombok.SneakyThrows;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import se.michaelthelin.spotify.SpotifyApi;
 import se.michaelthelin.spotify.enums.ModelObjectType;
@@ -31,9 +29,14 @@ public class SpotifyServiceImpl implements SpotifyService {
     private final SpotifyArtistDao artistDao;
     private final CountryDao countryDao;
 
+    @SneakyThrows
+    @Override
+    public String getAccountEmail() {
+        return spotifyApi.getCurrentUsersProfile().build().execute().getEmail();
+    }
+
     @Override
     @SneakyThrows
-    @Cacheable(value = CacheConstants.REQUEST_CACHE)
     public List<PlaylistSimplified> getPlaylists() {
         return Arrays.stream(spotifyApi.getListOfCurrentUsersPlaylists()
                         .build()
@@ -260,7 +263,6 @@ public class SpotifyServiceImpl implements SpotifyService {
                 .anyMatch(artistsList::contains);
     }
 
-    @Cacheable(value = CacheConstants.REQUEST_CACHE)
     public TreeMap<String, List<AlbumSimplified>> getLastReleasesFromSubscribedArtists() {
         return getAllNewReleases(getUserFollowedArtists());
     }
@@ -303,7 +305,7 @@ public class SpotifyServiceImpl implements SpotifyService {
                             return false;
                         }
                     }).toList();
-            if (songs.size() != 0) {
+            if (!songs.isEmpty()) {
                 map.put(artist.getName(), songs);
             }
         }
