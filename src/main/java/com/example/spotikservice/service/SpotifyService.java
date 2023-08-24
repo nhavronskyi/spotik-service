@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.TreeMap;
 
 public interface SpotifyService {
-    String getAccountId();
+    String getAccountEmail();
 
     List<PlaylistSimplified> getPlaylists();
 

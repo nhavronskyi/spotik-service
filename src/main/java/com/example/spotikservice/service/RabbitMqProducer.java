@@ -25,7 +25,7 @@ public class RabbitMqProducer {
                         .map(AlbumSimplified::getName)
                         .toList()))
                 .toList();
-        var idArtistSongs = new IdArtistSongs(service.getAccountId(), artistSongs);
+        var idArtistSongs = new EmailArtistSongs(service.getAccountEmail(), artistSongs);
         var json = new JsonMapper().writeValueAsString(idArtistSongs);
         template.convertAndSend(binding.getExchange(), binding.getRoutingKey(), json);
     }
@@ -33,8 +33,8 @@ public class RabbitMqProducer {
     @AllArgsConstructor
     @Getter
     @Setter
-    private static class IdArtistSongs {
-        private final String id;
+    private static class EmailArtistSongs {
+        private final String email;
         private final List<ArtistSongs> artists;
     }
 

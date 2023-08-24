@@ -29,9 +29,10 @@ public class SpotifyServiceImpl implements SpotifyService {
     private final SpotifyArtistDao artistDao;
     private final CountryDao countryDao;
 
+    @SneakyThrows
     @Override
-    public String getAccountId() {
-        return spotifyApi.getClientId();
+    public String getAccountEmail() {
+        return spotifyApi.getCurrentUsersProfile().build().execute().getEmail();
     }
 
     @Override
