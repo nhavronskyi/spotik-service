@@ -1,6 +1,5 @@
 package com.example.spotikservice.controller;
 
-import com.example.spotikservice.service.RabbitMqProducer;
 import com.example.spotikservice.service.SpotifyService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -14,7 +13,6 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class SpotifyController {
     private final SpotifyService service;
-    private final RabbitMqProducer producer;
 
     @GetMapping("playlists")
     public List<PlaylistSimplified> getPlaylists() {
@@ -33,7 +31,6 @@ public class SpotifyController {
 
     @GetMapping("last-releases")
     public Map<String, List<AlbumSimplified>> getFollowedArtists() {
-        producer.sendSongs();
         return service.getLastReleasesFromSubscribedArtists();
     }
 

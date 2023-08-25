@@ -7,22 +7,15 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-@Entity(name = "users")
+@Entity(name = "telegram_users")
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class User {
+public class TelegramUser {
     @Id
     private String id;
-
-    private String accessToken;
-
-    private String refreshToken;
-
-    private long accessTokenExpirationTime;
-
-    private String username;
-
     private String email;
+    private Boolean active;
+    private Integer checkNumber;
 }
