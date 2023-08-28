@@ -14,10 +14,10 @@ chosen countries.
 </thead>
 <tbody>
   <tr>
-    <td>METHOD</td>
-    <td>REQUEST</td>
-    <td>DESCRIPTIONS</td>
-    <td>ARGUMENTS</td>
+    <td><strong>METHOD</strong></td>
+    <td><strong>REQUEST</strong></td>
+    <td><strong>DESCRIPTIONS</strong></td>
+    <td><strong>ARGUMENTS</strong></td>
   </tr>
   <tr>
     <td rowspan="6">GET</td>
@@ -47,7 +47,7 @@ chosen countries.
   </tr>
   <tr>
     <td>account-scan</td>
-    <td>gets all songs from the account by country</td>
+    <td>shows all songs from the account by country</td>
     <td>YES</td>
   </tr>
   <tr>
